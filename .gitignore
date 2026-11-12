@@ -1,0 +1,6 @@
+*.o
+ProcWorld
+ProcWorld-headless
+pwg_tests
+build*/
+/world_*.png

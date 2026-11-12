@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SFML, zlib and doctest
+        run: sudo apt-get update && sudo apt-get install -y libsfml-dev zlib1g-dev doctest-dev
+      - name: Tests with AddressSanitizer + UBSan
+        run: |
+          cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DPWG_SANITIZE=ON && cmake --build build-asan -j2
+          ctest --test-dir build-asan --output-on-failure
+      - name: Release build with the viewer (CMake) and make
+        run: |
+          cmake -S . -B build && cmake --build build -j2
+          make ProcWorld test
+      - name: Export smoke run
+        run: |
+          ./build/ProcWorld 42 --no-window --years 20 --stats --export map.png
+          test -s map.png
+
+  headless-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build without SFML
+        run: |
+          sudo apt-get update && sudo apt-get install -y zlib1g-dev
+          make headless && ./ProcWorld-headless --seed 3 --size 300x200 --no-window --export m.png --stats
